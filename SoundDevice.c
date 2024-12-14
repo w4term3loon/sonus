@@ -12,20 +12,22 @@ snderr(const char *errmsg) {
 void
 cleanAlcErrorOnDevice(ALCdevice *device) {
   ALCenum error = alcGetError(device);
-  fprintf(stderr, "OpenAL error: %d\n", error);
+  if (error != ALC_NO_ERROR) {
+    fprintf(stderr, "OpenAL error: %d\n", error);
+  }
 }
 
-void
-SoundDevice_create(SoundDevice_t soundDevice) {
+SoundDevice
+SoundDevice_create(void) {
 #if DEBUG
   fprintf(stderr, "constructing sound device\n");
 #endif
 
   // create soundDevice
-  soundDevice = (SoundDevice_t)malloc(sizeof(struct SoundDevice));
+  SoundDevice soundDevice = (SoundDevice)malloc(sizeof(struct SoundDevice_t));
   if (!soundDevice) {
     snderr("failed to allocate memory");
-    return;
+    return NULL;
   }
 
   // fetch the default output device
@@ -61,29 +63,17 @@ SoundDevice_create(SoundDevice_t soundDevice) {
   }
 
   fprintf(stdout, "Opened \"%s\"\n", name);
+  return soundDevice;
 }
 
 void
 Shutdown(void);
 
 void
-SoundDevice_destroy(SoundDevice_t soundDevice, int shutdown) {
+SoundDevice_destroy(SoundDevice soundDevice) {
 #if DEBUG
   fprintf(stderr, "destructing sound device\n");
 #endif
-
-  if (shutdown) {
-    Shutdown();
-  }
-
-  free((void *)soundDevice);
-  soundDevice = NULL;
-}
-
-void
-Shutdown(void) {
-  ALCcontext *ctx = alcGetCurrentContext();
-  ALCdevice *dev = alcGetContextsDevice(ctx);
 
   // free device context from reference
   if (!alcMakeContextCurrent(NULL)) {
@@ -94,18 +84,23 @@ Shutdown(void) {
 #endif
   }
 
-  alcDestroyContext(ctx);
-  alcGetError(dev);
+  // destroy device context
+  alcDestroyContext(soundDevice->p_ALCcontext);
+  cleanAlcErrorOnDevice(soundDevice->p_ALCdevice);
 #if DEBUG
   fprintf(stderr, "device context destroyed\n");
 #endif
 
   // close device
-  if (!alcCloseDevice(dev)) {
+  if (!alcCloseDevice(soundDevice->p_ALCdevice)) {
     snderr("failed to close device");
   } else {
 #if DEBUG
     fprintf(stderr, "device closed\n");
 #endif
   }
+
+  free((void *)soundDevice);
+  soundDevice = NULL;
 }
+

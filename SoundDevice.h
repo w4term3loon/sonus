@@ -3,13 +3,13 @@
 
 #include <AL/alc.h>
 
-struct SoundDevice {
+struct SoundDevice_t {
   ALCdevice *p_ALCdevice;
   ALCcontext *p_ALCcontext;
 };
 
-typedef struct SoundDevice *SoundDevice_t;
-void SoundDevice_create(SoundDevice_t);
-void SoundDevice_destroy(SoundDevice_t, int);
+typedef struct SoundDevice_t *SoundDevice;
+SoundDevice SoundDevice_create(void);
+void SoundDevice_destroy(SoundDevice);
 
 #endif // SOUND_DEVICE_INCLUDE_GUARD
